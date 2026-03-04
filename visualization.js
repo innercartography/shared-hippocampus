@@ -1,5 +1,6 @@
 // visualization.js — 3D Neural Galaxy
 // Three.js point cloud with shaders, morph, energy pulses, orbit controls
+// + floating keyword labels + bright connections
 
 // ── Theme colors ─────────────────────────────────────────────────────
 const THEMES = {
@@ -13,7 +14,7 @@ let currentTheme = 'purple';
 let graphData = { nodes: [], links: [] };
 let frozen = false;
 let morphed = false;
-let morphProgress = 0; // 0 = organic, 1 = sphere
+let morphProgress = 0;
 let lastFetch = 0;
 const FETCH_INTERVAL = 3000;
 
@@ -24,12 +25,16 @@ let lineGeometry, lineMaterial, lineSegments;
 let clock = new THREE.Clock();
 
 // Per-node data
-let positions = [];       // organic layout [x,y,z, ...]
-let spherePositions = []; // sphere layout
+let positions = [];
+let spherePositions = [];
 let velocities = [];
 let weights = [];
 let nodeIds = [];
 let nodeMap = {};
+
+// Label system
+let labelContainer;
+let labelElements = [];
 
 // Pulse system
 let pulses = [];
@@ -42,7 +47,7 @@ const vertexShader = `
   void main() {
     vBrightness = brightness;
     vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = size * (200.0 / -mvPos.z);
+    gl_PointSize = size * (250.0 / -mvPos.z);
     gl_Position = projectionMatrix * mvPos;
   }
 `;
@@ -55,12 +60,10 @@ const fragmentShader = `
     float d = length(gl_PointCoord - vec2(0.5));
     if (d > 0.5) discard;
     
-    // Soft glow falloff
     float glow = 1.0 - smoothstep(0.0, 0.5, d);
-    glow = pow(glow, 1.5);
+    glow = pow(glow, 1.3);
     
-    // Hot white center fading to theme color
-    vec3 hotCore = mix(uColor, vec3(1.0), pow(glow, 3.0));
+    vec3 hotCore = mix(uColor, vec3(1.0), pow(glow, 2.5));
     float alpha = glow * vBrightness;
     
     gl_FragColor = vec4(hotCore, alpha);
@@ -71,7 +74,7 @@ const fragmentShader = `
 function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050508);
-    scene.fog = new THREE.FogExp2(0x050508, 0.0008);
+    scene.fog = new THREE.FogExp2(0x050508, 0.0006);
 
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 5000);
     camera.position.set(0, 0, 350);
@@ -80,6 +83,12 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     document.body.insertBefore(renderer.domElement, document.body.firstChild);
+
+    // Create label overlay container
+    labelContainer = document.createElement('div');
+    labelContainer.id = 'label-container';
+    labelContainer.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;overflow:hidden;';
+    document.body.appendChild(labelContainer);
 
     // Orbit controls
     controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -105,26 +114,23 @@ function init() {
     nodePoints = new THREE.Points(nodeGeometry, nodeMaterial);
     scene.add(nodePoints);
 
-    // Connection lines
+    // Connection lines — BRIGHTER
     lineGeometry = new THREE.BufferGeometry();
     lineMaterial = new THREE.LineBasicMaterial({
-        color: new THREE.Color(tc[0] * 0.5, tc[1] * 0.5, tc[2] * 0.5),
+        color: new THREE.Color(tc[0] * 0.7, tc[1] * 0.7, tc[2] * 0.7),
         transparent: true,
-        opacity: 0.12,
+        opacity: 0.35,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
     });
     lineSegments = new THREE.LineSegments(lineGeometry, lineMaterial);
     scene.add(lineSegments);
 
-    // Ambient starfield
     createStarfield();
 
-    // Events
     window.addEventListener('resize', onResize);
     renderer.domElement.addEventListener('click', onCanvasClick);
 
-    // Density slider
     document.getElementById('density').addEventListener('input', (e) => {
         document.getElementById('density-val').textContent = e.target.value + '%';
     });
@@ -133,7 +139,7 @@ function init() {
     animate();
 }
 
-// ── Starfield background ─────────────────────────────────────────────
+// ── Starfield ────────────────────────────────────────────────────────
 function createStarfield() {
     const starCount = 2000;
     const geo = new THREE.BufferGeometry();
@@ -160,16 +166,14 @@ function createStarfield() {
         blending: THREE.AdditiveBlending,
         depthWrite: false,
     });
-
     scene.add(new THREE.Points(geo, starMat));
 }
 
-// ── Fetch graph data ─────────────────────────────────────────────────
+// ── Fetch ────────────────────────────────────────────────────────────
 async function fetchGraph() {
     try {
         const [graphRes, statsRes] = await Promise.all([
-            fetch('/api/graph'),
-            fetch('/api/stats')
+            fetch('/api/graph'), fetch('/api/stats')
         ]);
         const data = await graphRes.json();
         const stats = await statsRes.json();
@@ -188,16 +192,15 @@ function mergeGraph(newData) {
             nodeMap[node.id] = idx;
             nodeIds.push(node.id);
 
-            // Organic position — spread in a loose cluster
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
             const r = 80 + Math.random() * 120;
-            const x = r * Math.sin(phi) * Math.cos(theta);
-            const y = r * Math.sin(phi) * Math.sin(theta);
-            const z = r * Math.cos(phi);
-            positions.push(x, y, z);
+            positions.push(
+                r * Math.sin(phi) * Math.cos(theta),
+                r * Math.sin(phi) * Math.sin(theta),
+                r * Math.cos(phi)
+            );
 
-            // Sphere target
             const sr = 140;
             spherePositions.push(
                 sr * Math.sin(phi) * Math.cos(theta),
@@ -211,6 +214,9 @@ function mergeGraph(newData) {
                 (Math.random() - 0.5) * 0.1
             );
             weights.push(node.weight || 1);
+
+            // Create label element
+            createLabel(node.id, idx);
             changed = true;
         } else {
             const idx = nodeMap[node.id];
@@ -222,6 +228,74 @@ function mergeGraph(newData) {
     updateStats();
 }
 
+// ── Label System ─────────────────────────────────────────────────────
+function createLabel(text, idx) {
+    const el = document.createElement('div');
+    el.className = 'node-label';
+    el.textContent = text;
+    el.style.cssText = `
+    position: absolute;
+    color: rgba(255,255,255,0.85);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-shadow: 0 0 8px rgba(102,126,234,0.6), 0 0 20px rgba(102,126,234,0.3), 0 1px 3px rgba(0,0,0,0.9);
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: opacity 0.3s;
+  `;
+    labelContainer.appendChild(el);
+    labelElements[idx] = el;
+}
+
+function updateLabels() {
+    const posAttr = nodeGeometry.getAttribute('position');
+    if (!posAttr) return;
+
+    const halfW = window.innerWidth / 2;
+    const halfH = window.innerHeight / 2;
+    const vec = new THREE.Vector3();
+
+    for (let i = 0; i < nodeIds.length; i++) {
+        const el = labelElements[i];
+        if (!el) continue;
+
+        vec.set(posAttr.array[i * 3], posAttr.array[i * 3 + 1], posAttr.array[i * 3 + 2]);
+        vec.project(camera);
+
+        // Check if behind camera
+        if (vec.z > 1) {
+            el.style.opacity = '0';
+            continue;
+        }
+
+        const x = (vec.x * halfW) + halfW;
+        const y = -(vec.y * halfH) + halfH;
+
+        // Distance-based opacity and size
+        const camDist = camera.position.distanceTo(
+            new THREE.Vector3(posAttr.array[i * 3], posAttr.array[i * 3 + 1], posAttr.array[i * 3 + 2])
+        );
+        const opacity = Math.max(0, Math.min(1, 1.2 - camDist / 500));
+        const w = weights[i];
+        const fontSize = Math.min(11 + w * 1.5, 22);
+
+        el.style.left = x + 'px';
+        el.style.top = (y + 14 + w * 0.8) + 'px';
+        el.style.opacity = opacity;
+        el.style.fontSize = fontSize + 'px';
+
+        // Brighter labels for heavier nodes
+        if (w > 3) {
+            el.style.color = 'rgba(255,255,255,0.95)';
+            el.style.fontWeight = '600';
+        }
+    }
+}
+
+// ── Buffers ──────────────────────────────────────────────────────────
 function rebuildBuffers() {
     const n = nodeIds.length;
     const posArr = new Float32Array(n * 3);
@@ -230,21 +304,18 @@ function rebuildBuffers() {
 
     for (let i = 0; i < n; i++) {
         const w = weights[i];
-        // Lerp between organic and sphere based on morphProgress
         posArr[i * 3] = lerp(positions[i * 3], spherePositions[i * 3], morphProgress);
         posArr[i * 3 + 1] = lerp(positions[i * 3 + 1], spherePositions[i * 3 + 1], morphProgress);
         posArr[i * 3 + 2] = lerp(positions[i * 3 + 2], spherePositions[i * 3 + 2], morphProgress);
 
-        // Weight-based size and brightness
-        sizeArr[i] = 3 + Math.pow(w, 1.2) * 2.5;
-        brightArr[i] = 0.5 + Math.min(w * 0.12, 0.9);
+        // Bigger and brighter nodes for higher weight
+        sizeArr[i] = 4 + Math.pow(w, 1.3) * 3;
+        brightArr[i] = 0.6 + Math.min(w * 0.15, 0.9);
     }
 
     nodeGeometry.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
     nodeGeometry.setAttribute('size', new THREE.BufferAttribute(sizeArr, 1));
     nodeGeometry.setAttribute('brightness', new THREE.BufferAttribute(brightArr, 1));
-
-    // Rebuild lines
     rebuildLines();
 }
 
@@ -282,65 +353,57 @@ function animate() {
     const delta = clock.getDelta();
     const time = clock.getElapsedTime();
 
-    // Fetch data periodically
     if (time - lastFetch > FETCH_INTERVAL / 1000) {
         lastFetch = time;
         fetchGraph();
     }
 
     if (!frozen && nodeIds.length > 0) {
-        // Smooth morph transition
         const morphTarget = morphed ? 1 : 0;
         morphProgress += (morphTarget - morphProgress) * 0.03;
 
-        // Animate organic positions with gentle drift
         const n = nodeIds.length;
         const posAttr = nodeGeometry.getAttribute('position');
         const sizeAttr = nodeGeometry.getAttribute('size');
         const brightAttr = nodeGeometry.getAttribute('brightness');
         if (posAttr) {
             for (let i = 0; i < n; i++) {
-                // Organic drift
                 velocities[i * 3] += (Math.random() - 0.5) * 0.015;
                 velocities[i * 3 + 1] += (Math.random() - 0.5) * 0.015;
                 velocities[i * 3 + 2] += (Math.random() - 0.5) * 0.015;
 
-                // Damping
                 velocities[i * 3] *= 0.98;
                 velocities[i * 3 + 1] *= 0.98;
                 velocities[i * 3 + 2] *= 0.98;
 
-                // Update organic positions
                 positions[i * 3] += velocities[i * 3];
                 positions[i * 3 + 1] += velocities[i * 3 + 1];
                 positions[i * 3 + 2] += velocities[i * 3 + 2];
 
-                // Center gravity
                 positions[i * 3] += -positions[i * 3] * 0.0003;
                 positions[i * 3 + 1] += -positions[i * 3 + 1] * 0.0003;
                 positions[i * 3 + 2] += -positions[i * 3 + 2] * 0.0003;
 
-                // Lerp to morph target
                 posAttr.array[i * 3] = lerp(positions[i * 3], spherePositions[i * 3], morphProgress);
                 posAttr.array[i * 3 + 1] = lerp(positions[i * 3 + 1], spherePositions[i * 3 + 1], morphProgress);
                 posAttr.array[i * 3 + 2] = lerp(positions[i * 3 + 2], spherePositions[i * 3 + 2], morphProgress);
 
-                // Breathing pulse on size
                 const w = weights[i];
                 const breath = 1.0 + Math.sin(time * 1.5 + i * 0.7) * 0.15;
-                sizeAttr.array[i] = (3 + Math.pow(w, 1.2) * 2.5) * breath;
-                brightAttr.array[i] = 0.5 + Math.min(w * 0.12, 0.9);
+                sizeAttr.array[i] = (4 + Math.pow(w, 1.3) * 3) * breath;
+                brightAttr.array[i] = 0.6 + Math.min(w * 0.15, 0.9);
             }
             posAttr.needsUpdate = true;
             sizeAttr.needsUpdate = true;
             brightAttr.needsUpdate = true;
-
             rebuildLines();
         }
     }
 
-    // Animate pulses
     animatePulses(delta);
+
+    // Update floating labels every 2 frames for performance
+    if (Math.floor(time * 30) % 2 === 0) updateLabels();
 
     controls.update();
     renderer.render(scene, camera);
@@ -348,10 +411,8 @@ function animate() {
 
 // ── Energy Pulses ────────────────────────────────────────────────────
 function onCanvasClick(event) {
-    // Send pulses from random node along all its connections
     if (nodeIds.length === 0 || graphData.links.length === 0) return;
 
-    // Find clicked node or use random
     const randomLinks = graphData.links.filter(() => Math.random() < 0.4);
     const tc = THEMES[currentTheme].accent;
 
@@ -373,25 +434,19 @@ function onCanvasClick(event) {
         });
     }
 
-    // Create pulse meshes
     for (const p of pulses) {
         if (p.mesh) continue;
-        const geo = new THREE.SphereGeometry(1.5, 8, 8);
+        const geo = new THREE.SphereGeometry(2, 8, 8);
         const mat = new THREE.MeshBasicMaterial({
-            color: p.color,
-            transparent: true,
-            opacity: 1,
+            color: p.color, transparent: true, opacity: 1,
             blending: THREE.AdditiveBlending,
         });
         p.mesh = new THREE.Mesh(geo, mat);
         scene.add(p.mesh);
 
-        // Glow sphere
-        const glowGeo = new THREE.SphereGeometry(4, 8, 8);
+        const glowGeo = new THREE.SphereGeometry(5, 8, 8);
         const glowMat = new THREE.MeshBasicMaterial({
-            color: p.color,
-            transparent: true,
-            opacity: 0.3,
+            color: p.color, transparent: true, opacity: 0.4,
             blending: THREE.AdditiveBlending,
         });
         p.glow = new THREE.Mesh(glowGeo, glowMat);
@@ -415,7 +470,37 @@ function animatePulses(delta) {
         if (p.mesh) p.mesh.position.copy(pos);
         if (p.glow) {
             p.glow.position.copy(pos);
-            p.glow.material.opacity = 0.3 * (1 - p.progress);
+            p.glow.material.opacity = 0.4 * (1 - p.progress);
+        }
+    }
+
+    // Ambient random pulses
+    if (Math.random() < 0.008 && graphData.links.length > 0) {
+        const link = graphData.links[Math.floor(Math.random() * graphData.links.length)];
+        const tc = THEMES[currentTheme].accent;
+        const ai = nodeMap[link.source];
+        const bi = nodeMap[link.target];
+        if (ai !== undefined && bi !== undefined) {
+            const posAttr = nodeGeometry.getAttribute('position');
+            if (posAttr) {
+                pulses.push({
+                    start: new THREE.Vector3(posAttr.array[ai * 3], posAttr.array[ai * 3 + 1], posAttr.array[ai * 3 + 2]),
+                    end: new THREE.Vector3(posAttr.array[bi * 3], posAttr.array[bi * 3 + 1], posAttr.array[bi * 3 + 2]),
+                    progress: 0, speed: 0.3 + Math.random() * 0.5,
+                    color: new THREE.Color(tc[0], tc[1], tc[2]),
+                    mesh: null
+                });
+                // Create mesh for this pulse
+                const p = pulses[pulses.length - 1];
+                const geo = new THREE.SphereGeometry(1.5, 6, 6);
+                const mat = new THREE.MeshBasicMaterial({ color: p.color, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
+                p.mesh = new THREE.Mesh(geo, mat);
+                scene.add(p.mesh);
+                const glowGeo = new THREE.SphereGeometry(4, 6, 6);
+                const glowMat = new THREE.MeshBasicMaterial({ color: p.color, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
+                p.glow = new THREE.Mesh(glowGeo, glowMat);
+                scene.add(p.glow);
+            }
         }
     }
 }
@@ -446,20 +531,18 @@ function resetView() {
 function setTheme(name) {
     currentTheme = name;
     const tc = THEMES[name].accent;
-
-    // Update shader uniform
     nodeMaterial.uniforms.uColor.value.setRGB(tc[0], tc[1], tc[2]);
-
-    // Update line color
-    lineMaterial.color.setRGB(tc[0] * 0.5, tc[1] * 0.5, tc[2] * 0.5);
-
-    // Update CSS
+    lineMaterial.color.setRGB(tc[0] * 0.7, tc[1] * 0.7, tc[2] * 0.7);
     document.documentElement.style.setProperty('--neon-accent', THEMES[name].css);
     document.documentElement.style.setProperty('--neon-glow', THEMES[name].css + '66');
-
-    // Update active dot
     document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
     document.querySelector(`.theme-dot.${name}`).classList.add('active');
+
+    // Update label glow color
+    const glowColor = THEMES[name].css;
+    labelElements.forEach(el => {
+        if (el) el.style.textShadow = `0 0 8px ${glowColor}99, 0 0 20px ${glowColor}4D, 0 1px 3px rgba(0,0,0,0.9)`;
+    });
 }
 
 // ── Resize ───────────────────────────────────────────────────────────

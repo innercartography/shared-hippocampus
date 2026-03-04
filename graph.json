@@ -263,6 +263,42 @@
       "weight": 4.5,
       "mentions": 1,
       "connections": 7
+    },
+    {
+      "id": "music",
+      "weight": 3.5,
+      "mentions": 1,
+      "connections": 5
+    },
+    {
+      "id": "mathematics",
+      "weight": 3.5,
+      "mentions": 1,
+      "connections": 5
+    },
+    {
+      "id": "share",
+      "weight": 3.5,
+      "mentions": 1,
+      "connections": 5
+    },
+    {
+      "id": "deep",
+      "weight": 3.5,
+      "mentions": 1,
+      "connections": 5
+    },
+    {
+      "id": "structural",
+      "weight": 3.5,
+      "mentions": 1,
+      "connections": 5
+    },
+    {
+      "id": "harmony",
+      "weight": 3.5,
+      "mentions": 1,
+      "connections": 5
     }
   ],
   "links": [
@@ -1194,6 +1230,81 @@
     {
       "source": "awareness",
       "target": "mind",
+      "strength": 1
+    },
+    {
+      "source": "mathematics",
+      "target": "music",
+      "strength": 1
+    },
+    {
+      "source": "music",
+      "target": "share",
+      "strength": 1
+    },
+    {
+      "source": "deep",
+      "target": "music",
+      "strength": 1
+    },
+    {
+      "source": "music",
+      "target": "structural",
+      "strength": 1
+    },
+    {
+      "source": "harmony",
+      "target": "music",
+      "strength": 1
+    },
+    {
+      "source": "mathematics",
+      "target": "share",
+      "strength": 1
+    },
+    {
+      "source": "deep",
+      "target": "mathematics",
+      "strength": 1
+    },
+    {
+      "source": "mathematics",
+      "target": "structural",
+      "strength": 1
+    },
+    {
+      "source": "harmony",
+      "target": "mathematics",
+      "strength": 1
+    },
+    {
+      "source": "deep",
+      "target": "share",
+      "strength": 1
+    },
+    {
+      "source": "share",
+      "target": "structural",
+      "strength": 1
+    },
+    {
+      "source": "harmony",
+      "target": "share",
+      "strength": 1
+    },
+    {
+      "source": "deep",
+      "target": "structural",
+      "strength": 1
+    },
+    {
+      "source": "deep",
+      "target": "harmony",
+      "strength": 1
+    },
+    {
+      "source": "harmony",
+      "target": "structural",
       "strength": 1
     }
   ]
