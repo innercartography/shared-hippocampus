@@ -44,9 +44,9 @@
     },
     {
       "id": "ai",
-      "weight": 10,
-      "mentions": 2,
-      "connections": 16
+      "weight": 12.5,
+      "mentions": 3,
+      "connections": 19
     },
     {
       "id": "neural",
@@ -299,6 +299,24 @@
       "weight": 3.5,
       "mentions": 1,
       "connections": 5
+    },
+    {
+      "id": "skills",
+      "weight": 2.5,
+      "mentions": 1,
+      "connections": 3
+    },
+    {
+      "id": "built",
+      "weight": 2.5,
+      "mentions": 1,
+      "connections": 3
+    },
+    {
+      "id": "claude",
+      "weight": 2.5,
+      "mentions": 1,
+      "connections": 3
     }
   ],
   "links": [
@@ -1305,6 +1323,36 @@
     {
       "source": "harmony",
       "target": "structural",
+      "strength": 1
+    },
+    {
+      "source": "built",
+      "target": "skills",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "skills",
+      "strength": 1
+    },
+    {
+      "source": "claude",
+      "target": "skills",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "built",
+      "strength": 1
+    },
+    {
+      "source": "built",
+      "target": "claude",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "claude",
       "strength": 1
     }
   ]
