@@ -1,4 +1,1200 @@
 {
-  "nodes": [],
-  "links": []
+  "nodes": [
+    {
+      "id": "artificial",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "intelligence",
+      "weight": 9,
+      "mentions": 2,
+      "connections": 14
+    },
+    {
+      "id": "transform",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "understand",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "consciousness",
+      "weight": 14,
+      "mentions": 3,
+      "connections": 22
+    },
+    {
+      "id": "nature",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "mind",
+      "weight": 8.5,
+      "mentions": 2,
+      "connections": 13
+    },
+    {
+      "id": "ai",
+      "weight": 10,
+      "mentions": 2,
+      "connections": 16
+    },
+    {
+      "id": "neural",
+      "weight": 6,
+      "mentions": 1,
+      "connections": 10
+    },
+    {
+      "id": "networks",
+      "weight": 10.5,
+      "mentions": 2,
+      "connections": 17
+    },
+    {
+      "id": "mirror",
+      "weight": 6,
+      "mentions": 1,
+      "connections": 10
+    },
+    {
+      "id": "structure",
+      "weight": 6,
+      "mentions": 1,
+      "connections": 10
+    },
+    {
+      "id": "biological",
+      "weight": 6,
+      "mentions": 1,
+      "connections": 10
+    },
+    {
+      "id": "brains",
+      "weight": 6,
+      "mentions": 1,
+      "connections": 10
+    },
+    {
+      "id": "creating",
+      "weight": 6,
+      "mentions": 1,
+      "connections": 10
+    },
+    {
+      "id": "digital",
+      "weight": 6,
+      "mentions": 1,
+      "connections": 10
+    },
+    {
+      "id": "brain",
+      "weight": 6,
+      "mentions": 1,
+      "connections": 10
+    },
+    {
+      "id": "quantum",
+      "weight": 4,
+      "mentions": 1,
+      "connections": 6
+    },
+    {
+      "id": "computing",
+      "weight": 4,
+      "mentions": 1,
+      "connections": 6
+    },
+    {
+      "id": "simulate",
+      "weight": 4,
+      "mentions": 1,
+      "connections": 6
+    },
+    {
+      "id": "reality",
+      "weight": 4,
+      "mentions": 1,
+      "connections": 6
+    },
+    {
+      "id": "deepest",
+      "weight": 4,
+      "mentions": 1,
+      "connections": 6
+    },
+    {
+      "id": "level",
+      "weight": 4,
+      "mentions": 1,
+      "connections": 6
+    },
+    {
+      "id": "physics",
+      "weight": 4,
+      "mentions": 1,
+      "connections": 6
+    },
+    {
+      "id": "intersection",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "art",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "technology",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "opens",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "dimensions",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "creative",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "expression",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "creativity",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "collective",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "emerges",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "minds",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "connect",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "shared",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "knowledge",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "meditation",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "mindfulness",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "reveal",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "hidden",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "patterns",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    },
+    {
+      "id": "awareness",
+      "weight": 4.5,
+      "mentions": 1,
+      "connections": 7
+    }
+  ],
+  "links": [
+    {
+      "source": "artificial",
+      "target": "intelligence",
+      "strength": 1
+    },
+    {
+      "source": "artificial",
+      "target": "transform",
+      "strength": 1
+    },
+    {
+      "source": "artificial",
+      "target": "understand",
+      "strength": 1
+    },
+    {
+      "source": "artificial",
+      "target": "consciousness",
+      "strength": 1
+    },
+    {
+      "source": "artificial",
+      "target": "nature",
+      "strength": 1
+    },
+    {
+      "source": "artificial",
+      "target": "mind",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "artificial",
+      "strength": 1
+    },
+    {
+      "source": "intelligence",
+      "target": "transform",
+      "strength": 1
+    },
+    {
+      "source": "intelligence",
+      "target": "understand",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "intelligence",
+      "strength": 1
+    },
+    {
+      "source": "intelligence",
+      "target": "nature",
+      "strength": 1
+    },
+    {
+      "source": "intelligence",
+      "target": "mind",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "intelligence",
+      "strength": 1
+    },
+    {
+      "source": "transform",
+      "target": "understand",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "transform",
+      "strength": 1
+    },
+    {
+      "source": "nature",
+      "target": "transform",
+      "strength": 1
+    },
+    {
+      "source": "mind",
+      "target": "transform",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "transform",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "understand",
+      "strength": 1
+    },
+    {
+      "source": "nature",
+      "target": "understand",
+      "strength": 1
+    },
+    {
+      "source": "mind",
+      "target": "understand",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "understand",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "nature",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "mind",
+      "strength": 2
+    },
+    {
+      "source": "ai",
+      "target": "consciousness",
+      "strength": 2
+    },
+    {
+      "source": "mind",
+      "target": "nature",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "nature",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "mind",
+      "strength": 1
+    },
+    {
+      "source": "networks",
+      "target": "neural",
+      "strength": 1
+    },
+    {
+      "source": "mirror",
+      "target": "neural",
+      "strength": 1
+    },
+    {
+      "source": "neural",
+      "target": "structure",
+      "strength": 1
+    },
+    {
+      "source": "biological",
+      "target": "neural",
+      "strength": 1
+    },
+    {
+      "source": "brains",
+      "target": "neural",
+      "strength": 1
+    },
+    {
+      "source": "creating",
+      "target": "neural",
+      "strength": 1
+    },
+    {
+      "source": "digital",
+      "target": "neural",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "neural",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "neural",
+      "strength": 1
+    },
+    {
+      "source": "brain",
+      "target": "neural",
+      "strength": 1
+    },
+    {
+      "source": "mirror",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "networks",
+      "target": "structure",
+      "strength": 1
+    },
+    {
+      "source": "biological",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "brains",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "creating",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "digital",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "brain",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "mirror",
+      "target": "structure",
+      "strength": 1
+    },
+    {
+      "source": "biological",
+      "target": "mirror",
+      "strength": 1
+    },
+    {
+      "source": "brains",
+      "target": "mirror",
+      "strength": 1
+    },
+    {
+      "source": "creating",
+      "target": "mirror",
+      "strength": 1
+    },
+    {
+      "source": "digital",
+      "target": "mirror",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "mirror",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "mirror",
+      "strength": 1
+    },
+    {
+      "source": "brain",
+      "target": "mirror",
+      "strength": 1
+    },
+    {
+      "source": "biological",
+      "target": "structure",
+      "strength": 1
+    },
+    {
+      "source": "brains",
+      "target": "structure",
+      "strength": 1
+    },
+    {
+      "source": "creating",
+      "target": "structure",
+      "strength": 1
+    },
+    {
+      "source": "digital",
+      "target": "structure",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "structure",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "structure",
+      "strength": 1
+    },
+    {
+      "source": "brain",
+      "target": "structure",
+      "strength": 1
+    },
+    {
+      "source": "biological",
+      "target": "brains",
+      "strength": 1
+    },
+    {
+      "source": "biological",
+      "target": "creating",
+      "strength": 1
+    },
+    {
+      "source": "biological",
+      "target": "digital",
+      "strength": 1
+    },
+    {
+      "source": "biological",
+      "target": "consciousness",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "biological",
+      "strength": 1
+    },
+    {
+      "source": "biological",
+      "target": "brain",
+      "strength": 1
+    },
+    {
+      "source": "brains",
+      "target": "creating",
+      "strength": 1
+    },
+    {
+      "source": "brains",
+      "target": "digital",
+      "strength": 1
+    },
+    {
+      "source": "brains",
+      "target": "consciousness",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "brains",
+      "strength": 1
+    },
+    {
+      "source": "brain",
+      "target": "brains",
+      "strength": 1
+    },
+    {
+      "source": "creating",
+      "target": "digital",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "creating",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "creating",
+      "strength": 1
+    },
+    {
+      "source": "brain",
+      "target": "creating",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "digital",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "digital",
+      "strength": 1
+    },
+    {
+      "source": "brain",
+      "target": "digital",
+      "strength": 1
+    },
+    {
+      "source": "brain",
+      "target": "consciousness",
+      "strength": 1
+    },
+    {
+      "source": "ai",
+      "target": "brain",
+      "strength": 1
+    },
+    {
+      "source": "computing",
+      "target": "quantum",
+      "strength": 1
+    },
+    {
+      "source": "quantum",
+      "target": "simulate",
+      "strength": 1
+    },
+    {
+      "source": "quantum",
+      "target": "reality",
+      "strength": 1
+    },
+    {
+      "source": "deepest",
+      "target": "quantum",
+      "strength": 1
+    },
+    {
+      "source": "level",
+      "target": "quantum",
+      "strength": 1
+    },
+    {
+      "source": "physics",
+      "target": "quantum",
+      "strength": 1
+    },
+    {
+      "source": "computing",
+      "target": "simulate",
+      "strength": 1
+    },
+    {
+      "source": "computing",
+      "target": "reality",
+      "strength": 1
+    },
+    {
+      "source": "computing",
+      "target": "deepest",
+      "strength": 1
+    },
+    {
+      "source": "computing",
+      "target": "level",
+      "strength": 1
+    },
+    {
+      "source": "computing",
+      "target": "physics",
+      "strength": 1
+    },
+    {
+      "source": "reality",
+      "target": "simulate",
+      "strength": 1
+    },
+    {
+      "source": "deepest",
+      "target": "simulate",
+      "strength": 1
+    },
+    {
+      "source": "level",
+      "target": "simulate",
+      "strength": 1
+    },
+    {
+      "source": "physics",
+      "target": "simulate",
+      "strength": 1
+    },
+    {
+      "source": "deepest",
+      "target": "reality",
+      "strength": 1
+    },
+    {
+      "source": "level",
+      "target": "reality",
+      "strength": 1
+    },
+    {
+      "source": "physics",
+      "target": "reality",
+      "strength": 1
+    },
+    {
+      "source": "deepest",
+      "target": "level",
+      "strength": 1
+    },
+    {
+      "source": "deepest",
+      "target": "physics",
+      "strength": 1
+    },
+    {
+      "source": "level",
+      "target": "physics",
+      "strength": 1
+    },
+    {
+      "source": "art",
+      "target": "intersection",
+      "strength": 1
+    },
+    {
+      "source": "intersection",
+      "target": "technology",
+      "strength": 1
+    },
+    {
+      "source": "intersection",
+      "target": "opens",
+      "strength": 1
+    },
+    {
+      "source": "dimensions",
+      "target": "intersection",
+      "strength": 1
+    },
+    {
+      "source": "creative",
+      "target": "intersection",
+      "strength": 1
+    },
+    {
+      "source": "expression",
+      "target": "intersection",
+      "strength": 1
+    },
+    {
+      "source": "creativity",
+      "target": "intersection",
+      "strength": 1
+    },
+    {
+      "source": "art",
+      "target": "technology",
+      "strength": 1
+    },
+    {
+      "source": "art",
+      "target": "opens",
+      "strength": 1
+    },
+    {
+      "source": "art",
+      "target": "dimensions",
+      "strength": 1
+    },
+    {
+      "source": "art",
+      "target": "creative",
+      "strength": 1
+    },
+    {
+      "source": "art",
+      "target": "expression",
+      "strength": 1
+    },
+    {
+      "source": "art",
+      "target": "creativity",
+      "strength": 1
+    },
+    {
+      "source": "opens",
+      "target": "technology",
+      "strength": 1
+    },
+    {
+      "source": "dimensions",
+      "target": "technology",
+      "strength": 1
+    },
+    {
+      "source": "creative",
+      "target": "technology",
+      "strength": 1
+    },
+    {
+      "source": "expression",
+      "target": "technology",
+      "strength": 1
+    },
+    {
+      "source": "creativity",
+      "target": "technology",
+      "strength": 1
+    },
+    {
+      "source": "dimensions",
+      "target": "opens",
+      "strength": 1
+    },
+    {
+      "source": "creative",
+      "target": "opens",
+      "strength": 1
+    },
+    {
+      "source": "expression",
+      "target": "opens",
+      "strength": 1
+    },
+    {
+      "source": "creativity",
+      "target": "opens",
+      "strength": 1
+    },
+    {
+      "source": "creative",
+      "target": "dimensions",
+      "strength": 1
+    },
+    {
+      "source": "dimensions",
+      "target": "expression",
+      "strength": 1
+    },
+    {
+      "source": "creativity",
+      "target": "dimensions",
+      "strength": 1
+    },
+    {
+      "source": "creative",
+      "target": "expression",
+      "strength": 1
+    },
+    {
+      "source": "creative",
+      "target": "creativity",
+      "strength": 1
+    },
+    {
+      "source": "creativity",
+      "target": "expression",
+      "strength": 1
+    },
+    {
+      "source": "collective",
+      "target": "intelligence",
+      "strength": 1
+    },
+    {
+      "source": "collective",
+      "target": "emerges",
+      "strength": 1
+    },
+    {
+      "source": "collective",
+      "target": "minds",
+      "strength": 1
+    },
+    {
+      "source": "collective",
+      "target": "connect",
+      "strength": 1
+    },
+    {
+      "source": "collective",
+      "target": "shared",
+      "strength": 1
+    },
+    {
+      "source": "collective",
+      "target": "knowledge",
+      "strength": 1
+    },
+    {
+      "source": "collective",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "emerges",
+      "target": "intelligence",
+      "strength": 1
+    },
+    {
+      "source": "intelligence",
+      "target": "minds",
+      "strength": 1
+    },
+    {
+      "source": "connect",
+      "target": "intelligence",
+      "strength": 1
+    },
+    {
+      "source": "intelligence",
+      "target": "shared",
+      "strength": 1
+    },
+    {
+      "source": "intelligence",
+      "target": "knowledge",
+      "strength": 1
+    },
+    {
+      "source": "intelligence",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "emerges",
+      "target": "minds",
+      "strength": 1
+    },
+    {
+      "source": "connect",
+      "target": "emerges",
+      "strength": 1
+    },
+    {
+      "source": "emerges",
+      "target": "shared",
+      "strength": 1
+    },
+    {
+      "source": "emerges",
+      "target": "knowledge",
+      "strength": 1
+    },
+    {
+      "source": "emerges",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "connect",
+      "target": "minds",
+      "strength": 1
+    },
+    {
+      "source": "minds",
+      "target": "shared",
+      "strength": 1
+    },
+    {
+      "source": "knowledge",
+      "target": "minds",
+      "strength": 1
+    },
+    {
+      "source": "minds",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "connect",
+      "target": "shared",
+      "strength": 1
+    },
+    {
+      "source": "connect",
+      "target": "knowledge",
+      "strength": 1
+    },
+    {
+      "source": "connect",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "knowledge",
+      "target": "shared",
+      "strength": 1
+    },
+    {
+      "source": "networks",
+      "target": "shared",
+      "strength": 1
+    },
+    {
+      "source": "knowledge",
+      "target": "networks",
+      "strength": 1
+    },
+    {
+      "source": "meditation",
+      "target": "mindfulness",
+      "strength": 1
+    },
+    {
+      "source": "meditation",
+      "target": "reveal",
+      "strength": 1
+    },
+    {
+      "source": "hidden",
+      "target": "meditation",
+      "strength": 1
+    },
+    {
+      "source": "meditation",
+      "target": "patterns",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "meditation",
+      "strength": 1
+    },
+    {
+      "source": "awareness",
+      "target": "meditation",
+      "strength": 1
+    },
+    {
+      "source": "meditation",
+      "target": "mind",
+      "strength": 1
+    },
+    {
+      "source": "mindfulness",
+      "target": "reveal",
+      "strength": 1
+    },
+    {
+      "source": "hidden",
+      "target": "mindfulness",
+      "strength": 1
+    },
+    {
+      "source": "mindfulness",
+      "target": "patterns",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "mindfulness",
+      "strength": 1
+    },
+    {
+      "source": "awareness",
+      "target": "mindfulness",
+      "strength": 1
+    },
+    {
+      "source": "mind",
+      "target": "mindfulness",
+      "strength": 1
+    },
+    {
+      "source": "hidden",
+      "target": "reveal",
+      "strength": 1
+    },
+    {
+      "source": "patterns",
+      "target": "reveal",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "reveal",
+      "strength": 1
+    },
+    {
+      "source": "awareness",
+      "target": "reveal",
+      "strength": 1
+    },
+    {
+      "source": "mind",
+      "target": "reveal",
+      "strength": 1
+    },
+    {
+      "source": "hidden",
+      "target": "patterns",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "hidden",
+      "strength": 1
+    },
+    {
+      "source": "awareness",
+      "target": "hidden",
+      "strength": 1
+    },
+    {
+      "source": "hidden",
+      "target": "mind",
+      "strength": 1
+    },
+    {
+      "source": "consciousness",
+      "target": "patterns",
+      "strength": 1
+    },
+    {
+      "source": "awareness",
+      "target": "patterns",
+      "strength": 1
+    },
+    {
+      "source": "mind",
+      "target": "patterns",
+      "strength": 1
+    },
+    {
+      "source": "awareness",
+      "target": "consciousness",
+      "strength": 1
+    },
+    {
+      "source": "awareness",
+      "target": "mind",
+      "strength": 1
+    }
+  ]
 }

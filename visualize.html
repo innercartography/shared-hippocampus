@@ -4,32 +4,283 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Constellation — Shared Hippocampus</title>
+    <title>Neural Galaxy — Shared Hippocampus</title>
+    <meta name="description" content="3D neural galaxy visualization of collective ideas">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --glass-bg: rgba(12, 12, 20, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.12);
+            --neon-accent: #667eea;
+            --neon-glow: rgba(102, 126, 234, 0.4);
+            --text-main: rgba(255, 255, 255, 0.9);
+            --text-muted: rgba(255, 255, 255, 0.5);
+        }
+
         * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+            user-select: none;
         }
 
-        html,
         body {
-            width: 100%;
-            height: 100%;
+            background: #050508;
             overflow: hidden;
-            background: #000;
-            cursor: none;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: var(--text-main);
         }
 
         canvas {
             display: block;
         }
+
+        /* Glass panels */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-left: 1px solid var(--glass-highlight);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+        }
+
+        /* Title panel */
+        .title-panel {
+            position: fixed;
+            top: 28px;
+            left: 28px;
+            padding: 22px 28px;
+            z-index: 10;
+        }
+
+        .title-panel h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            margin-bottom: 6px;
+        }
+
+        .title-panel p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Theme panel */
+        .theme-panel {
+            position: fixed;
+            top: 28px;
+            right: 28px;
+            padding: 20px 24px;
+            z-index: 10;
+        }
+
+        .theme-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .theme-dots {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .theme-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .theme-dot:hover {
+            transform: scale(1.15);
+        }
+
+        .theme-dot.active {
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .theme-dot.purple {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .theme-dot.pink {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+
+        .theme-dot.blue {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+
+        .density-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .density-row label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .density-row span {
+            font-size: 0.75rem;
+            font-weight: 600;
+            min-width: 36px;
+            text-align: right;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Stats panel */
+        .stats-panel {
+            position: fixed;
+            bottom: 28px;
+            left: 28px;
+            padding: 16px 22px;
+            z-index: 10;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 20px;
+        }
+
+        .stats-panel .stat-val {
+            color: var(--text-main);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Control buttons */
+        .controls {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .ctrl-btn {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 14px 28px;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--glass-highlight);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .ctrl-btn.active {
+            border-color: var(--neon-accent);
+            box-shadow: 0 0 20px var(--neon-glow);
+        }
+
+        @media (max-width: 700px) {
+
+            .title-panel,
+            .theme-panel {
+                padding: 14px 18px;
+            }
+
+            .title-panel h1 {
+                font-size: 1rem;
+            }
+
+            .controls {
+                bottom: 16px;
+            }
+
+            .ctrl-btn {
+                padding: 10px 18px;
+                font-size: 0.65rem;
+            }
+        }
     </style>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
 </head>
 
 <body>
+    <!-- Title -->
+    <div class="glass title-panel" id="title-panel">
+        <h1>Neural Galaxy</h1>
+        <p>Click to send energy pulses.<br>Drag to explore the structure.</p>
+    </div>
+
+    <!-- Theme -->
+    <div class="glass theme-panel" id="theme-panel">
+        <div class="theme-label">Crystal Theme</div>
+        <div class="theme-dots">
+            <div class="theme-dot purple active" data-theme="purple" onclick="setTheme('purple')"></div>
+            <div class="theme-dot pink" data-theme="pink" onclick="setTheme('pink')"></div>
+            <div class="theme-dot blue" data-theme="blue" onclick="setTheme('blue')"></div>
+        </div>
+        <div class="density-row">
+            <label>Density</label>
+            <input type="range" id="density" min="20" max="100" value="100">
+            <span id="density-val">100%</span>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="glass stats-panel" id="stats-panel">
+        <div>Nodes <span class="stat-val" id="node-count">0</span></div>
+        <div>Links <span class="stat-val" id="link-count">0</span></div>
+        <div>Ideas <span class="stat-val" id="idea-count">0</span></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="ctrl-btn" id="btn-morph" onclick="toggleMorph()">Morph</button>
+        <button class="ctrl-btn" id="btn-freeze" onclick="toggleFreeze()">Freeze</button>
+        <button class="ctrl-btn" id="btn-reset" onclick="resetView()">Reset</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="visualization.js"></script>
 </body>
 

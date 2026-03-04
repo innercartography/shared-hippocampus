@@ -1,508 +1,476 @@
-// visualization.js — Neural Galaxy Constellation
-// Nodes grow dramatically bigger and glow brighter the more connections they have
-// Designed for fullscreen projection at 60fps
+// visualization.js — 3D Neural Galaxy
+// Three.js point cloud with shaders, morph, energy pulses, orbit controls
+
+// ── Theme colors ─────────────────────────────────────────────────────
+const THEMES = {
+    purple: { accent: [0.40, 0.49, 0.92], glow: '#667eea', css: '#667eea' },
+    pink: { accent: [0.96, 0.34, 0.42], glow: '#f5576c', css: '#f5576c' },
+    blue: { accent: [0.31, 0.67, 1.00], glow: '#4facfe', css: '#4facfe' },
+};
+let currentTheme = 'purple';
 
 // ── State ────────────────────────────────────────────────────────────
 let graphData = { nodes: [], links: [] };
-let neurons = [];
-let neuronMap = {};
-let synapticPulses = [];
-let backgroundStars = [];
-let birthEffects = [];
-let dustParticles = [];
+let frozen = false;
+let morphed = false;
+let morphProgress = 0; // 0 = organic, 1 = sphere
 let lastFetch = 0;
-let prevNodeCount = 0;
 const FETCH_INTERVAL = 3000;
 
-// ── Physics ──────────────────────────────────────────────────────────
-const DAMPING = 0.965;
-const REPULSION = 1800;
-const SPRING_LENGTH = 180;
-const SPRING_K = 0.003;
-const DRIFT_FORCE = 0.04;
-const CENTER_GRAVITY = 0.00025;
+// ── Three.js globals ─────────────────────────────────────────────────
+let scene, camera, renderer, controls;
+let nodeGeometry, nodeMaterial, nodePoints;
+let lineGeometry, lineMaterial, lineSegments;
+let clock = new THREE.Clock();
 
-// ── Color palette — bioluminescent neural tones ──────────────────────
-const NEURON_COLORS = [
-    [60, 180, 255], [140, 90, 255], [0, 240, 220],
-    [255, 100, 200], [80, 255, 160], [255, 180, 50],
-    [200, 130, 255], [0, 200, 180],
-];
+// Per-node data
+let positions = [];       // organic layout [x,y,z, ...]
+let spherePositions = []; // sphere layout
+let velocities = [];
+let weights = [];
+let nodeIds = [];
+let nodeMap = {};
 
-function getNeuronColor(id) {
-    let h = 0;
-    for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
-    return NEURON_COLORS[Math.abs(h) % NEURON_COLORS.length];
+// Pulse system
+let pulses = [];
+
+// ── Vertex Shader ────────────────────────────────────────────────────
+const vertexShader = `
+  attribute float size;
+  attribute float brightness;
+  varying float vBrightness;
+  void main() {
+    vBrightness = brightness;
+    vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+    gl_PointSize = size * (200.0 / -mvPos.z);
+    gl_Position = projectionMatrix * mvPos;
+  }
+`;
+
+// ── Fragment Shader ──────────────────────────────────────────────────
+const fragmentShader = `
+  uniform vec3 uColor;
+  varying float vBrightness;
+  void main() {
+    float d = length(gl_PointCoord - vec2(0.5));
+    if (d > 0.5) discard;
+    
+    // Soft glow falloff
+    float glow = 1.0 - smoothstep(0.0, 0.5, d);
+    glow = pow(glow, 1.5);
+    
+    // Hot white center fading to theme color
+    vec3 hotCore = mix(uColor, vec3(1.0), pow(glow, 3.0));
+    float alpha = glow * vBrightness;
+    
+    gl_FragColor = vec4(hotCore, alpha);
+  }
+`;
+
+// ── Init ─────────────────────────────────────────────────────────────
+function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050508);
+    scene.fog = new THREE.FogExp2(0x050508, 0.0008);
+
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 5000);
+    camera.position.set(0, 0, 350);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.insertBefore(renderer.domElement, document.body.firstChild);
+
+    // Orbit controls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.rotateSpeed = 0.5;
+    controls.minDistance = 50;
+    controls.maxDistance = 800;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.3;
+
+    // Node points
+    nodeGeometry = new THREE.BufferGeometry();
+    const tc = THEMES[currentTheme].accent;
+    nodeMaterial = new THREE.ShaderMaterial({
+        uniforms: { uColor: { value: new THREE.Color(tc[0], tc[1], tc[2]) } },
+        vertexShader,
+        fragmentShader,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+    });
+    nodePoints = new THREE.Points(nodeGeometry, nodeMaterial);
+    scene.add(nodePoints);
+
+    // Connection lines
+    lineGeometry = new THREE.BufferGeometry();
+    lineMaterial = new THREE.LineBasicMaterial({
+        color: new THREE.Color(tc[0] * 0.5, tc[1] * 0.5, tc[2] * 0.5),
+        transparent: true,
+        opacity: 0.12,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+    });
+    lineSegments = new THREE.LineSegments(lineGeometry, lineMaterial);
+    scene.add(lineSegments);
+
+    // Ambient starfield
+    createStarfield();
+
+    // Events
+    window.addEventListener('resize', onResize);
+    renderer.domElement.addEventListener('click', onCanvasClick);
+
+    // Density slider
+    document.getElementById('density').addEventListener('input', (e) => {
+        document.getElementById('density-val').textContent = e.target.value + '%';
+    });
+
+    fetchGraph();
+    animate();
 }
 
-// ── Weight → visual mapping (the key scaling functions) ──────────────
-// These make high-weight (popular/connected) nodes dramatically larger & brighter
+// ── Starfield background ─────────────────────────────────────────────
+function createStarfield() {
+    const starCount = 2000;
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(starCount * 3);
+    const sizes = new Float32Array(starCount);
+    const bright = new Float32Array(starCount);
 
-function weightToSize(w) {
-    // Exponential scaling: weight 1 → 14px, weight 5 → 35px, weight 10 → 65px, weight 20+ → 100px
-    return 10 + Math.pow(w, 1.4) * 5;
-}
-
-function weightToGlowIntensity(w) {
-    // Glow multiplier: weight 1 → 1x, weight 5 → 2.2x, weight 10 → 4x, weight 20 → 7x
-    return 0.7 + Math.pow(w, 0.85) * 0.6;
-}
-
-function weightToGlowLayers(w) {
-    // More glow layers for heavier nodes
-    return Math.min(Math.floor(3 + w * 0.8), 10);
-}
-
-function weightToCoronaSize(w) {
-    // Massive corona halo for popular nodes
-    return Math.pow(w, 1.3) * 12 + 30;
-}
-
-// ── p5 Setup ─────────────────────────────────────────────────────────
-function setup() {
-    createCanvas(windowWidth, windowHeight);
-    textFont('Inter, system-ui, sans-serif');
-    textAlign(CENTER, CENTER);
-    noCursor();
-    pixelDensity(1);
-
-    for (let i = 0; i < 300; i++) {
-        backgroundStars.push({
-            x: random(width), y: random(height),
-            size: random(0.5, 2.5),
-            twinkleSpeed: random(0.005, 0.025),
-            twinkleOffset: random(TWO_PI),
-            brightness: random(60, 180)
-        });
+    for (let i = 0; i < starCount; i++) {
+        pos[i * 3] = (Math.random() - 0.5) * 2000;
+        pos[i * 3 + 1] = (Math.random() - 0.5) * 2000;
+        pos[i * 3 + 2] = (Math.random() - 0.5) * 2000;
+        sizes[i] = Math.random() * 1.5 + 0.3;
+        bright[i] = Math.random() * 0.4 + 0.1;
     }
 
-    for (let i = 0; i < 60; i++) {
-        dustParticles.push({
-            x: random(width), y: random(height),
-            vx: random(-0.15, 0.15), vy: random(-0.15, 0.15),
-            size: random(1, 4), alpha: random(8, 25),
-            color: NEURON_COLORS[floor(random(NEURON_COLORS.length))]
-        });
-    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    geo.setAttribute('brightness', new THREE.BufferAttribute(bright, 1));
+
+    const starMat = new THREE.ShaderMaterial({
+        uniforms: { uColor: { value: new THREE.Color(0.6, 0.7, 1.0) } },
+        vertexShader, fragmentShader,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+    });
+
+    scene.add(new THREE.Points(geo, starMat));
 }
 
-function windowResized() { resizeCanvas(windowWidth, windowHeight); }
-
-// ── Main Draw ────────────────────────────────────────────────────────
-function draw() {
-    background(2, 2, 8);
-
-    if (millis() - lastFetch > FETCH_INTERVAL) {
-        lastFetch = millis();
-        fetchGraph();
-    }
-
-    drawBackgroundStars();
-    drawDustParticles();
-
-    if (neurons.length === 0) { drawEmptyState(); return; }
-
-    applyPhysics();
-    drawDeepNebulaLayer();
-    drawSynapticLinks();
-    drawSynapticPulses();
-    drawNeurons();
-    drawBirthEffects();
-}
-
-// ── Background ───────────────────────────────────────────────────────
-function drawBackgroundStars() {
-    noStroke();
-    for (const s of backgroundStars) {
-        let t = 0.5 + 0.5 * sin(frameCount * s.twinkleSpeed + s.twinkleOffset);
-        fill(200, 220, 255, s.brightness * t);
-        ellipse(s.x, s.y, s.size * t, s.size * t);
-    }
-}
-
-function drawDustParticles() {
-    noStroke();
-    for (const d of dustParticles) {
-        d.x += d.vx; d.y += d.vy;
-        if (d.x < 0) d.x = width; if (d.x > width) d.x = 0;
-        if (d.y < 0) d.y = height; if (d.y > height) d.y = 0;
-        fill(d.color[0], d.color[1], d.color[2], d.alpha);
-        ellipse(d.x, d.y, d.size, d.size);
-    }
-}
-
-function drawEmptyState() {
-    let pulse = 0.5 + sin(frameCount * 0.02) * 0.4;
-    noStroke();
-    fill(60, 120, 255, 3 * pulse);
-    ellipse(width / 2, height / 2, 400, 400);
-    fill(255, 255, 255, 45 * pulse);
-    textSize(20);
-    text('Waiting for ideas…', width / 2, height / 2);
-    fill(255, 255, 255, 22 * pulse);
-    textSize(13);
-    text('Scan the QR code to contribute', width / 2, height / 2 + 32);
-}
-
-// ── Nebula Layer ─────────────────────────────────────────────────────
-function drawDeepNebulaLayer() {
-    noStroke();
-    for (const n of neurons) {
-        if (n.alpha < 30) continue;
-        const col = n.color;
-        const a = (n.alpha / 255);
-        const intensity = weightToGlowIntensity(n.weight);
-        const nebulaSize = weightToCoronaSize(n.weight);
-
-        // Heavy nodes get massive ambient nebula
-        fill(col[0], col[1], col[2], a * 2.5 * intensity);
-        ellipse(n.x, n.y, nebulaSize * 2.5, nebulaSize * 2.5);
-        fill(col[0], col[1], col[2], a * 5 * intensity);
-        ellipse(n.x, n.y, nebulaSize * 1.3, nebulaSize * 1.3);
-    }
-}
-
-// ── Fetch & Merge ────────────────────────────────────────────────────
+// ── Fetch graph data ─────────────────────────────────────────────────
 async function fetchGraph() {
     try {
-        const res = await fetch('/api/graph');
-        const data = await res.json();
+        const [graphRes, statsRes] = await Promise.all([
+            fetch('/api/graph'),
+            fetch('/api/stats')
+        ]);
+        const data = await graphRes.json();
+        const stats = await statsRes.json();
         mergeGraph(data);
+        document.getElementById('idea-count').textContent = stats.count;
     } catch (e) { }
 }
 
 function mergeGraph(newData) {
     graphData = newData;
+    let changed = false;
 
     for (const node of newData.nodes) {
-        if (!(node.id in neuronMap)) {
-            const angle = random(TWO_PI);
-            const dist = random(80, 350);
-            const n = {
-                id: node.id,
-                x: width / 2 + cos(angle) * dist,
-                y: height / 2 + sin(angle) * dist,
-                vx: random(-0.2, 0.2), vy: random(-0.2, 0.2),
-                weight: node.weight,
-                targetWeight: node.weight,
-                mentions: node.mentions || 1,
-                connections: node.connections || 0,
-                alpha: 0,
-                birthFrame: frameCount,
-                driftAngle: random(TWO_PI),
-                color: getNeuronColor(node.id),
-                pulsePhase: random(TWO_PI),
-                dendrites: floor(random(3, 6))
-            };
-            neuronMap[node.id] = neurons.length;
-            neurons.push(n);
+        if (!(node.id in nodeMap)) {
+            const idx = nodeIds.length;
+            nodeMap[node.id] = idx;
+            nodeIds.push(node.id);
 
-            birthEffects.push({
-                x: n.x, y: n.y, color: n.color, frame: frameCount,
-                maxRadius: 100 + node.weight * 25, duration: 70
-            });
+            // Organic position — spread in a loose cluster
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            const r = 80 + Math.random() * 120;
+            const x = r * Math.sin(phi) * Math.cos(theta);
+            const y = r * Math.sin(phi) * Math.sin(theta);
+            const z = r * Math.cos(phi);
+            positions.push(x, y, z);
+
+            // Sphere target
+            const sr = 140;
+            spherePositions.push(
+                sr * Math.sin(phi) * Math.cos(theta),
+                sr * Math.sin(phi) * Math.sin(theta),
+                sr * Math.cos(phi)
+            );
+
+            velocities.push(
+                (Math.random() - 0.5) * 0.1,
+                (Math.random() - 0.5) * 0.1,
+                (Math.random() - 0.5) * 0.1
+            );
+            weights.push(node.weight || 1);
+            changed = true;
         } else {
-            const idx = neuronMap[node.id];
-            neurons[idx].targetWeight = node.weight;
-            neurons[idx].mentions = node.mentions || neurons[idx].mentions;
-            neurons[idx].connections = node.connections || neurons[idx].connections;
+            const idx = nodeMap[node.id];
+            weights[idx] = node.weight || 1;
         }
     }
 
-    if (newData.nodes.length > prevNodeCount && prevNodeCount > 0) {
-        for (const link of newData.links) {
-            if (random() < 0.5) spawnPulse(link.source, link.target);
+    if (changed) rebuildBuffers();
+    updateStats();
+}
+
+function rebuildBuffers() {
+    const n = nodeIds.length;
+    const posArr = new Float32Array(n * 3);
+    const sizeArr = new Float32Array(n);
+    const brightArr = new Float32Array(n);
+
+    for (let i = 0; i < n; i++) {
+        const w = weights[i];
+        // Lerp between organic and sphere based on morphProgress
+        posArr[i * 3] = lerp(positions[i * 3], spherePositions[i * 3], morphProgress);
+        posArr[i * 3 + 1] = lerp(positions[i * 3 + 1], spherePositions[i * 3 + 1], morphProgress);
+        posArr[i * 3 + 2] = lerp(positions[i * 3 + 2], spherePositions[i * 3 + 2], morphProgress);
+
+        // Weight-based size and brightness
+        sizeArr[i] = 3 + Math.pow(w, 1.2) * 2.5;
+        brightArr[i] = 0.5 + Math.min(w * 0.12, 0.9);
+    }
+
+    nodeGeometry.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+    nodeGeometry.setAttribute('size', new THREE.BufferAttribute(sizeArr, 1));
+    nodeGeometry.setAttribute('brightness', new THREE.BufferAttribute(brightArr, 1));
+
+    // Rebuild lines
+    rebuildLines();
+}
+
+function rebuildLines() {
+    const linePositions = [];
+    const density = parseInt(document.getElementById('density').value) / 100;
+
+    for (const link of graphData.links) {
+        if (Math.random() > density) continue;
+        const ai = nodeMap[link.source];
+        const bi = nodeMap[link.target];
+        if (ai === undefined || bi === undefined) continue;
+
+        const posAttr = nodeGeometry.getAttribute('position');
+        if (!posAttr) continue;
+
+        linePositions.push(
+            posAttr.array[ai * 3], posAttr.array[ai * 3 + 1], posAttr.array[ai * 3 + 2],
+            posAttr.array[bi * 3], posAttr.array[bi * 3 + 1], posAttr.array[bi * 3 + 2]
+        );
+    }
+
+    lineGeometry.setAttribute('position',
+        new THREE.BufferAttribute(new Float32Array(linePositions), 3));
+}
+
+function updateStats() {
+    document.getElementById('node-count').textContent = nodeIds.length;
+    document.getElementById('link-count').textContent = graphData.links.length;
+}
+
+// ── Animation Loop ───────────────────────────────────────────────────
+function animate() {
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    const time = clock.getElapsedTime();
+
+    // Fetch data periodically
+    if (time - lastFetch > FETCH_INTERVAL / 1000) {
+        lastFetch = time;
+        fetchGraph();
+    }
+
+    if (!frozen && nodeIds.length > 0) {
+        // Smooth morph transition
+        const morphTarget = morphed ? 1 : 0;
+        morphProgress += (morphTarget - morphProgress) * 0.03;
+
+        // Animate organic positions with gentle drift
+        const n = nodeIds.length;
+        const posAttr = nodeGeometry.getAttribute('position');
+        const sizeAttr = nodeGeometry.getAttribute('size');
+        const brightAttr = nodeGeometry.getAttribute('brightness');
+        if (posAttr) {
+            for (let i = 0; i < n; i++) {
+                // Organic drift
+                velocities[i * 3] += (Math.random() - 0.5) * 0.015;
+                velocities[i * 3 + 1] += (Math.random() - 0.5) * 0.015;
+                velocities[i * 3 + 2] += (Math.random() - 0.5) * 0.015;
+
+                // Damping
+                velocities[i * 3] *= 0.98;
+                velocities[i * 3 + 1] *= 0.98;
+                velocities[i * 3 + 2] *= 0.98;
+
+                // Update organic positions
+                positions[i * 3] += velocities[i * 3];
+                positions[i * 3 + 1] += velocities[i * 3 + 1];
+                positions[i * 3 + 2] += velocities[i * 3 + 2];
+
+                // Center gravity
+                positions[i * 3] += -positions[i * 3] * 0.0003;
+                positions[i * 3 + 1] += -positions[i * 3 + 1] * 0.0003;
+                positions[i * 3 + 2] += -positions[i * 3 + 2] * 0.0003;
+
+                // Lerp to morph target
+                posAttr.array[i * 3] = lerp(positions[i * 3], spherePositions[i * 3], morphProgress);
+                posAttr.array[i * 3 + 1] = lerp(positions[i * 3 + 1], spherePositions[i * 3 + 1], morphProgress);
+                posAttr.array[i * 3 + 2] = lerp(positions[i * 3 + 2], spherePositions[i * 3 + 2], morphProgress);
+
+                // Breathing pulse on size
+                const w = weights[i];
+                const breath = 1.0 + Math.sin(time * 1.5 + i * 0.7) * 0.15;
+                sizeAttr.array[i] = (3 + Math.pow(w, 1.2) * 2.5) * breath;
+                brightAttr.array[i] = 0.5 + Math.min(w * 0.12, 0.9);
+            }
+            posAttr.needsUpdate = true;
+            sizeAttr.needsUpdate = true;
+            brightAttr.needsUpdate = true;
+
+            rebuildLines();
         }
     }
-    prevNodeCount = newData.nodes.length;
 
-    for (const n of neurons) {
-        n.weight = lerp(n.weight, n.targetWeight, 0.06);
+    // Animate pulses
+    animatePulses(delta);
+
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+// ── Energy Pulses ────────────────────────────────────────────────────
+function onCanvasClick(event) {
+    // Send pulses from random node along all its connections
+    if (nodeIds.length === 0 || graphData.links.length === 0) return;
+
+    // Find clicked node or use random
+    const randomLinks = graphData.links.filter(() => Math.random() < 0.4);
+    const tc = THEMES[currentTheme].accent;
+
+    for (const link of randomLinks) {
+        const ai = nodeMap[link.source];
+        const bi = nodeMap[link.target];
+        if (ai === undefined || bi === undefined) continue;
+
+        const posAttr = nodeGeometry.getAttribute('position');
+        if (!posAttr) continue;
+
+        pulses.push({
+            start: new THREE.Vector3(posAttr.array[ai * 3], posAttr.array[ai * 3 + 1], posAttr.array[ai * 3 + 2]),
+            end: new THREE.Vector3(posAttr.array[bi * 3], posAttr.array[bi * 3 + 1], posAttr.array[bi * 3 + 2]),
+            progress: 0,
+            speed: 0.5 + Math.random() * 0.8,
+            color: new THREE.Color(tc[0], tc[1], tc[2]),
+            mesh: null
+        });
+    }
+
+    // Create pulse meshes
+    for (const p of pulses) {
+        if (p.mesh) continue;
+        const geo = new THREE.SphereGeometry(1.5, 8, 8);
+        const mat = new THREE.MeshBasicMaterial({
+            color: p.color,
+            transparent: true,
+            opacity: 1,
+            blending: THREE.AdditiveBlending,
+        });
+        p.mesh = new THREE.Mesh(geo, mat);
+        scene.add(p.mesh);
+
+        // Glow sphere
+        const glowGeo = new THREE.SphereGeometry(4, 8, 8);
+        const glowMat = new THREE.MeshBasicMaterial({
+            color: p.color,
+            transparent: true,
+            opacity: 0.3,
+            blending: THREE.AdditiveBlending,
+        });
+        p.glow = new THREE.Mesh(glowGeo, glowMat);
+        scene.add(p.glow);
     }
 }
 
-// ── Synaptic Pulses ──────────────────────────────────────────────────
-function spawnPulse(sourceId, targetId) {
-    const si = neuronMap[sourceId], ti = neuronMap[targetId];
-    if (si === undefined || ti === undefined) return;
-    synapticPulses.push({
-        source: si, target: ti, progress: 0,
-        speed: random(0.008, 0.02),
-        color: neurons[si].color,
-        size: random(3, 7), trail: []
-    });
-}
+function animatePulses(delta) {
+    for (let i = pulses.length - 1; i >= 0; i--) {
+        const p = pulses[i];
+        p.progress += delta * p.speed;
 
-function drawSynapticPulses() {
-    noStroke();
-    for (let i = synapticPulses.length - 1; i >= 0; i--) {
-        const p = synapticPulses[i];
-        p.progress += p.speed;
-
-        if (p.progress > 1) {
-            const target = neurons[p.target];
-            if (target) target.alpha = min(255, target.alpha + 20);
-            synapticPulses.splice(i, 1);
+        if (p.progress >= 1) {
+            if (p.mesh) scene.remove(p.mesh);
+            if (p.glow) scene.remove(p.glow);
+            pulses.splice(i, 1);
             continue;
         }
 
-        const a = neurons[p.source], b = neurons[p.target];
-        const t = p.progress;
-        const mx = (a.x + b.x) / 2 + (a.y - b.y) * 0.15;
-        const my = (a.y + b.y) / 2 + (b.x - a.x) * 0.15;
-        const px = bezierPoint(a.x, mx, mx, b.x, t);
-        const py = bezierPoint(a.y, my, my, b.y, t);
-
-        p.trail.push({ x: px, y: py });
-        if (p.trail.length > 14) p.trail.shift();
-
-        for (let j = 0; j < p.trail.length; j++) {
-            const ta = (j / p.trail.length) * 160;
-            const ts = p.size * (j / p.trail.length);
-            fill(p.color[0], p.color[1], p.color[2], ta);
-            ellipse(p.trail[j].x, p.trail[j].y, ts, ts);
-        }
-
-        fill(255, 255, 255, 230);
-        ellipse(px, py, p.size, p.size);
-        fill(p.color[0], p.color[1], p.color[2], 90);
-        ellipse(px, py, p.size * 3.5, p.size * 3.5);
-    }
-
-    // Random ambient firing
-    if (frameCount % 70 === 0 && graphData.links.length > 0) {
-        const link = graphData.links[floor(random(graphData.links.length))];
-        spawnPulse(link.source, link.target);
-    }
-}
-
-// ── Birth Bloom ──────────────────────────────────────────────────────
-function drawBirthEffects() {
-    noStroke();
-    for (let i = birthEffects.length - 1; i >= 0; i--) {
-        const b = birthEffects[i];
-        const age = frameCount - b.frame;
-        const t = age / b.duration;
-        if (t > 1) { birthEffects.splice(i, 1); continue; }
-
-        const easeOut = 1 - (1 - t) * (1 - t);
-        const radius = easeOut * b.maxRadius;
-        const alpha = (1 - t);
-
-        stroke(b.color[0], b.color[1], b.color[2], alpha * 130);
-        strokeWeight(2.5 * (1 - t));
-        noFill();
-        ellipse(b.x, b.y, radius * 2, radius * 2);
-
-        noStroke();
-        fill(b.color[0], b.color[1], b.color[2], alpha * 40);
-        ellipse(b.x, b.y, radius * 1.2, radius * 1.2);
-
-        fill(255, 255, 255, alpha * 100);
-        for (let j = 0; j < 8; j++) {
-            const sa = (j / 8) * TWO_PI + age * 0.06;
-            const sd = radius * 0.6;
-            ellipse(b.x + cos(sa) * sd, b.y + sin(sa) * sd, 2.5 * (1 - t), 2.5 * (1 - t));
+        const pos = new THREE.Vector3().lerpVectors(p.start, p.end, p.progress);
+        if (p.mesh) p.mesh.position.copy(pos);
+        if (p.glow) {
+            p.glow.position.copy(pos);
+            p.glow.material.opacity = 0.3 * (1 - p.progress);
         }
     }
 }
 
-// ── Physics ──────────────────────────────────────────────────────────
-function applyPhysics() {
-    const n = neurons.length;
-
-    for (let i = 0; i < n; i++) {
-        for (let j = i + 1; j < n; j++) {
-            const a = neurons[i], b = neurons[j];
-            let dx = a.x - b.x, dy = a.y - b.y;
-            let dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            let force = Math.min(REPULSION / (dist * dist), 1.2);
-            let fx = (dx / dist) * force, fy = (dy / dist) * force;
-            a.vx += fx; a.vy += fy;
-            b.vx -= fx; b.vy -= fy;
-        }
-    }
-
-    for (const link of graphData.links) {
-        const ai = neuronMap[link.source], bi = neuronMap[link.target];
-        if (ai === undefined || bi === undefined) continue;
-        const a = neurons[ai], b = neurons[bi];
-        let dx = b.x - a.x, dy = b.y - a.y;
-        let dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        let disp = dist - SPRING_LENGTH;
-        let fx = (dx / dist) * disp * SPRING_K, fy = (dy / dist) * disp * SPRING_K;
-        a.vx += fx; a.vy += fy;
-        b.vx -= fx; b.vy -= fy;
-    }
-
-    for (const p of neurons) {
-        p.vx += (width / 2 - p.x) * CENTER_GRAVITY;
-        p.vy += (height / 2 - p.y) * CENTER_GRAVITY;
-        p.driftAngle += random(-0.01, 0.01);
-        p.vx += cos(p.driftAngle) * DRIFT_FORCE;
-        p.vy += sin(p.driftAngle) * DRIFT_FORCE;
-        p.vx *= DAMPING; p.vy *= DAMPING;
-        p.x += p.vx; p.y += p.vy;
-
-        const m = 120;
-        if (p.x < m) p.vx += 0.25; if (p.x > width - m) p.vx -= 0.25;
-        if (p.y < m) p.vy += 0.25; if (p.y > height - m) p.vy -= 0.25;
-        if (p.alpha < 255) p.alpha = min(255, p.alpha + 2.5);
-    }
+// ── Controls ─────────────────────────────────────────────────────────
+function toggleMorph() {
+    morphed = !morphed;
+    document.getElementById('btn-morph').classList.toggle('active', morphed);
 }
 
-// ── Synaptic Links ───────────────────────────────────────────────────
-function drawSynapticLinks() {
-    for (const link of graphData.links) {
-        const ai = neuronMap[link.source], bi = neuronMap[link.target];
-        if (ai === undefined || bi === undefined) continue;
-        const a = neurons[ai], b = neurons[bi];
-
-        let alpha = min(a.alpha, b.alpha) / 255;
-        let dist = Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
-        let distFade = constrain(map(dist, 80, 500, 1, 0.1), 0.1, 1);
-
-        // Thicker links for stronger co-occurrences
-        let strength = (link.strength || 1);
-        let thickMult = 0.6 + strength * 0.4;
-
-        const mx = (a.x + b.x) / 2 + (a.y - b.y) * 0.15;
-        const my = (a.y + b.y) / 2 + (b.x - a.x) * 0.15;
-
-        const mr = (a.color[0] + b.color[0]) / 2;
-        const mg = (a.color[1] + b.color[1]) / 2;
-        const mb = (a.color[2] + b.color[2]) / 2;
-
-        noFill();
-
-        // Outer glow
-        stroke(mr, mg, mb, alpha * distFade * 12 * thickMult);
-        strokeWeight(6 * thickMult);
-        bezier(a.x, a.y, mx, my, mx, my, b.x, b.y);
-
-        // Mid glow
-        stroke(mr, mg, mb, alpha * distFade * 30 * thickMult);
-        strokeWeight(2.5 * thickMult);
-        bezier(a.x, a.y, mx, my, mx, my, b.x, b.y);
-
-        // Core dendrite
-        stroke(mr, mg, mb, alpha * distFade * 55);
-        strokeWeight(0.8 * thickMult);
-        bezier(a.x, a.y, mx, my, mx, my, b.x, b.y);
-    }
-    noStroke();
+function toggleFreeze() {
+    frozen = !frozen;
+    controls.autoRotate = !frozen;
+    document.getElementById('btn-freeze').classList.toggle('active', frozen);
 }
 
-// ── Neurons ──────────────────────────────────────────────────────────
-function drawNeurons() {
-    // Sort by weight so heavy nodes draw on top
-    const sorted = [...neurons].sort((a, b) => a.weight - b.weight);
-
-    for (const n of sorted) {
-        const size = weightToSize(n.weight);
-        const glowI = weightToGlowIntensity(n.weight);
-        const layers = weightToGlowLayers(n.weight);
-        const a = n.alpha / 255;
-        const col = n.color;
-
-        // Breathing — heavier nodes pulse more visibly
-        const breathAmp = 0.08 + n.weight * 0.008;
-        const breath = 1.0 + sin(frameCount * 0.04 + n.pulsePhase) * breathAmp;
-
-        noStroke();
-
-        // Corona glow layers — MORE and BRIGHTER for heavy nodes
-        for (let i = layers; i >= 1; i--) {
-            let gs = size * (1.8 + i * 0.9) * breath;
-            let ga = (5 * glowI / (i * 0.6)) * a;
-            fill(col[0], col[1], col[2], ga);
-            ellipse(n.x, n.y, gs, gs);
-        }
-
-        // Inner radiant body — intensity scales with weight
-        fill(col[0], col[1], col[2], (40 + n.weight * 5) * a);
-        ellipse(n.x, n.y, size * 1.6 * breath, size * 1.6 * breath);
-
-        // Soma (cell body) — proportionally larger for heavy nodes
-        const somaRatio = 0.45 + n.weight * 0.008;
-        fill(
-            lerp(col[0], 255, 0.5),
-            lerp(col[1], 255, 0.5),
-            lerp(col[2], 255, 0.5),
-            (180 + n.weight * 5) * a
-        );
-        ellipse(n.x, n.y, size * somaRatio, size * somaRatio);
-
-        // Nucleus — bright white center
-        fill(255, 255, 255, (220 + n.weight * 3) * a);
-        ellipse(n.x, n.y, size * 0.15 + n.weight * 0.3, size * 0.15 + n.weight * 0.3);
-
-        // Dendrite spikes — more for heavily connected nodes
-        const dendCount = min(floor(3 + n.connections * 0.5), 12);
-        if (dendCount > 0 && n.weight > 1) {
-            stroke(col[0], col[1], col[2], (30 + n.weight * 3) * a);
-            strokeWeight(0.8 + n.weight * 0.08);
-            for (let d = 0; d < dendCount; d++) {
-                const dAngle = (d / dendCount) * TWO_PI + frameCount * 0.002 + n.birthFrame;
-                const dLen = size * (0.7 + 0.3 * sin(frameCount * 0.02 + d * 2.5)) * breath;
-                const dx = n.x + cos(dAngle) * dLen;
-                const dy = n.y + sin(dAngle) * dLen;
-                line(n.x, n.y, dx, dy);
-
-                noStroke();
-                fill(col[0], col[1], col[2], (50 + n.weight * 4) * a);
-                ellipse(dx, dy, 3 + n.weight * 0.3, 3 + n.weight * 0.3);
-                stroke(col[0], col[1], col[2], (30 + n.weight * 3) * a);
-                strokeWeight(0.8 + n.weight * 0.08);
-            }
-            noStroke();
-        }
-
-        // Cross flare on high-weight hubs
-        if (n.weight > 4) {
-            let flLen = size * 1.5 * breath;
-            let flAlpha = min(30 + n.weight * 2, 60) * a;
-            stroke(col[0], col[1], col[2], flAlpha);
-            strokeWeight(1.5 + n.weight * 0.1);
-            line(n.x - flLen, n.y, n.x + flLen, n.y);
-            line(n.x, n.y - flLen, n.x, n.y + flLen);
-            // Diagonal flares for very popular nodes
-            if (n.weight > 8) {
-                let dfl = flLen * 0.6;
-                strokeWeight(1);
-                line(n.x - dfl, n.y - dfl, n.x + dfl, n.y + dfl);
-                line(n.x - dfl, n.y + dfl, n.x + dfl, n.y - dfl);
-            }
-            noStroke();
-        }
-
-        drawLabel(n, size, a);
-    }
+function resetView() {
+    camera.position.set(0, 0, 350);
+    camera.lookAt(0, 0, 0);
+    controls.reset();
+    morphed = false;
+    frozen = false;
+    morphProgress = 0;
+    document.getElementById('btn-morph').classList.remove('active');
+    document.getElementById('btn-freeze').classList.remove('active');
 }
 
-function drawLabel(n, size, a) {
-    // Larger labels for heavier nodes
-    let fontSize = 11 + Math.pow(n.weight, 0.7) * 3;
-    fontSize = constrain(fontSize, 11, 30);
-    textSize(fontSize);
-    textStyle(NORMAL);
+function setTheme(name) {
+    currentTheme = name;
+    const tc = THEMES[name].accent;
 
-    const yOff = size * 0.55 + 18;
+    // Update shader uniform
+    nodeMaterial.uniforms.uColor.value.setRGB(tc[0], tc[1], tc[2]);
 
-    // Shadow outline for projection legibility
-    fill(2, 2, 8, a * 200);
-    for (let ox = -1; ox <= 1; ox++) {
-        for (let oy = -1; oy <= 1; oy++) {
-            if (ox === 0 && oy === 0) continue;
-            text(n.id, n.x + ox, n.y + yOff + oy);
-        }
-    }
+    // Update line color
+    lineMaterial.color.setRGB(tc[0] * 0.5, tc[1] * 0.5, tc[2] * 0.5);
 
-    // Brighter label for heavier nodes
-    let labelBright = min(200 + n.weight * 5, 255);
-    fill(labelBright, labelBright + 10, 255, a * 240);
-    text(n.id, n.x, n.y + yOff);
+    // Update CSS
+    document.documentElement.style.setProperty('--neon-accent', THEMES[name].css);
+    document.documentElement.style.setProperty('--neon-glow', THEMES[name].css + '66');
+
+    // Update active dot
+    document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+    document.querySelector(`.theme-dot.${name}`).classList.add('active');
 }
 
-// ── Init ─────────────────────────────────────────────────────────────
-window.addEventListener('load', () => fetchGraph());
+// ── Resize ───────────────────────────────────────────────────────────
+function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// ── Util ─────────────────────────────────────────────────────────────
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+// ── Start ────────────────────────────────────────────────────────────
+init();
