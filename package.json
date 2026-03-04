@@ -1,0 +1,12 @@
+{
+  "name": "shared-hippocampus",
+  "version": "1.0.0",
+  "description": "Shared Hippocampus — real-time idea constellation for projection",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

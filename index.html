@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shared Hippocampus — Host Dashboard</title>
+  <meta name="description" content="Host dashboard for the Shared Hippocampus real-time idea constellation system">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-primary: #07070e;
+      --bg-card: rgba(255, 255, 255, 0.03);
+      --bg-card-hover: rgba(255, 255, 255, 0.06);
+      --border: rgba(255, 255, 255, 0.08);
+      --text-primary: #e8e8f0;
+      --text-secondary: #8888a8;
+      --accent-blue: #5b8aff;
+      --accent-purple: #a855f7;
+      --accent-cyan: #22d3ee;
+      --glow-blue: rgba(91, 138, 255, 0.15);
+      --glow-purple: rgba(168, 85, 247, 0.12);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 600px 400px at 20% 20%, var(--glow-purple), transparent),
+        radial-gradient(ellipse 500px 500px at 80% 70%, var(--glow-blue), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple), var(--accent-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      font-weight: 300;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 680px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      backdrop-filter: blur(12px);
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .qr-card {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    #qr-container {
+      flex-shrink: 0;
+      width: 180px;
+      height: 180px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #qr-container img,
+    #qr-container canvas {
+      display: block;
+    }
+
+    .qr-info h2 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .qr-url {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--accent-cyan);
+      word-break: break-all;
+      padding: 10px 14px;
+      background: rgba(34, 211, 238, 0.06);
+      border: 1px solid rgba(34, 211, 238, 0.15);
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+
+    .stat-value {
+      font-size: 3.2rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.25s;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      box-shadow: 0 4px 20px rgba(91, 138, 255, 0.25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 28px rgba(91, 138, 255, 0.35);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 8px #34d399;
+      animation: pulse-dot 2s ease-in-out infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    .status-line {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 12px;
+    }
+
+    @media (max-width: 680px) {
+      .qr-card {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>🧠 Shared Hippocampus</h1>
+      <p>Real-time collective idea constellation</p>
+    </header>
+
+    <div class="grid">
+      <div class="card qr-card">
+        <div id="qr-container"></div>
+        <div class="qr-info">
+          <h2>Scan to Submit Ideas</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">
+            Point your phone camera at this QR code to open the idea submission page.
+          </p>
+          <div class="qr-url" id="submit-url">Loading...</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Submissions</div>
+        <div class="stat-value" id="count">0</div>
+        <div class="status-line">
+          <span class="status-dot"></span>
+          <span>Live — polling every 3s</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Controls</div>
+        <div class="actions">
+          <a href="/visualize.html" target="_blank" class="btn btn-primary">✦ Open Visualization</a>
+          <button class="btn btn-secondary" onclick="exportData()">↓ Export Dataset (JSON)</button>
+          <button class="btn btn-secondary" onclick="resetData()">⟳ Reset All Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function initQR() {
+      let url;
+      try {
+        const res = await fetch('/api/info');
+        const info = await res.json();
+        url = info.submitUrl;
+      } catch (e) {
+        url = window.location.origin + '/submit.html';
+      }
+      document.getElementById('submit-url').textContent = url;
+
+      const qrImg = document.createElement('img');
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}&bgcolor=0a0a14&color=e8e8f0&format=png`;
+      qrImg.width = 180; qrImg.height = 180;
+      qrImg.alt = 'QR Code to submit ideas';
+      qrImg.style.borderRadius = '8px';
+      qrImg.onerror = () => {
+        document.getElementById('qr-container').innerHTML =
+          `<div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:0.8rem;">
+            QR unavailable<br><br>Share link:<br>
+            <span style="color:var(--accent-cyan);font-size:0.75rem;">${url}</span></div>`;
+      };
+      document.getElementById('qr-container').appendChild(qrImg);
+    }
+
+    async function pollStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const stats = await res.json();
+        document.getElementById('count').textContent = stats.count;
+      } catch (e) { }
+    }
+
+    async function exportData() {
+      const res = await fetch('/api/data');
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `shared-hippocampus-${Date.now()}.json`;
+      a.click();
+    }
+
+    async function resetData() {
+      if (!confirm('Reset all submissions? This cannot be undone.')) return;
+      await fetch('/api/reset', { method: 'POST' });
+      pollStats();
+    }
+
+    initQR();
+    pollStats();
+    setInterval(pollStats, 3000);
+  </script>
+</body>
+
+</html>

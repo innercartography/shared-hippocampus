@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Submit — Shared Hippocampus</title>
+    <meta name="description" content="Submit your ideas to the Shared Hippocampus collective constellation">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #07070e;
+            --surface: rgba(255, 255, 255, 0.04);
+            --surface-hover: rgba(255, 255, 255, 0.07);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #e8e8f0;
+            --text-dim: #7a7a9a;
+            --accent: #5b8aff;
+            --accent2: #a855f7;
+            --cyan: #22d3ee;
+            --success: #34d399;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px 48px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Ambient glow */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 400px 300px at 30% 10%, rgba(168, 85, 247, 0.1), transparent),
+                radial-gradient(ellipse 350px 350px at 70% 80%, rgba(91, 138, 255, 0.08), transparent);
+            pointer-events: none;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        .optional-badge {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.25);
+            text-transform: none;
+            letter-spacing: 0;
+            margin-left: 6px;
+        }
+
+        textarea,
+        input[type="text"],
+        select {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.25s, background 0.25s;
+            -webkit-appearance: none;
+        }
+
+        textarea:focus,
+        input:focus,
+        select:focus {
+            border-color: var(--accent);
+            background: var(--surface-hover);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: var(--text);
+        }
+
+        /* Audio */
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-audio {
+            padding: 10px 18px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .btn-audio:hover {
+            background: var(--surface-hover);
+        }
+
+        .btn-audio.recording {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            animation: pulse-rec 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-rec {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .audio-status {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* Submit button */
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 24px rgba(91, 138, 255, 0.3);
+            margin-top: 8px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 32px rgba(91, 138, 255, 0.4);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Success overlay */
+        .success-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(7, 7, 14, 0.92);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+        }
+
+        .success-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes pop-in {
+            0% {
+                transform: scale(0);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .success-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .success-sub {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🧠 Shared Hippocampus</h1>
+            <p>Add your idea to the constellation</p>
+        </header>
+
+        <form id="idea-form" autocomplete="off">
+            <!-- Idea -->
+            <div class="form-group">
+                <label for="idea">Your Idea</label>
+                <textarea id="idea" placeholder="Share a thought, question, or insight..." required></textarea>
+            </div>
+
+            <!-- Tags -->
+            <div class="form-group">
+                <label for="tags">Tags <span class="optional-badge">comma separated</span></label>
+                <input type="text" id="tags" placeholder="e.g. AI, creativity, future">
+            </div>
+
+            <!-- Emotion -->
+            <div class="form-group">
+                <label for="emotion">Emotion <span class="optional-badge">optional</span></label>
+                <select id="emotion">
+                    <option value="">Select an emotion...</option>
+                    <option value="curiosity">✨ Curiosity</option>
+                    <option value="excitement">🔥 Excitement</option>
+                    <option value="concern">⚠️ Concern</option>
+                    <option value="wonder">🌌 Wonder</option>
+                    <option value="other">💭 Other</option>
+                </select>
+            </div>
+
+            <!-- Audio -->
+            <div class="form-group">
+                <label>Audio Note <span class="optional-badge">optional</span></label>
+                <div class="audio-controls">
+                    <button type="button" class="btn-audio" id="audio-btn" onclick="toggleRecording()">
+                        🎙 Record
+                    </button>
+                    <span class="audio-status" id="audio-status">Tap to record a voice note</span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submit-btn">
+                ✦ Submit Idea
+            </button>
+        </form>
+    </div>
+
+    <!-- Success overlay -->
+    <div class="success-overlay" id="success-overlay">
+        <div class="success-icon">✦</div>
+        <div class="success-text">Idea Added!</div>
+        <div class="success-sub">Your thought joins the constellation</div>
+    </div>
+
+    <script>
+        // ── Audio Recording ─────────────────────────────────
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let audioBlob = null;
+        let isRecording = false;
+
+        async function toggleRecording() {
+            const btn = document.getElementById('audio-btn');
+            const status = document.getElementById('audio-status');
+
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        status.textContent = `✓ Recorded (${(audioBlob.size / 1024).toFixed(1)}KB)`;
+                        stream.getTracks().forEach(t => t.stop());
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    btn.textContent = '⏹ Stop';
+                    btn.classList.add('recording');
+                    status.textContent = 'Recording...';
+                } catch (err) {
+                    status.textContent = 'Mic access denied';
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                btn.textContent = '🎙 Record';
+                btn.classList.remove('recording');
+            }
+        }
+
+        // ── Form Submission ──────────────────────────────────
+        document.getElementById('idea-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            const idea = document.getElementById('idea').value.trim();
+            const tags = document.getElementById('tags').value.trim();
+            const emotion = document.getElementById('emotion').value;
+
+            try {
+                const res = await fetch('/api/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idea, tags, emotion })
+                });
+
+                if (res.ok) {
+                    // Show success
+                    const overlay = document.getElementById('success-overlay');
+                    overlay.classList.add('visible');
+
+                    setTimeout(() => {
+                        overlay.classList.remove('visible');
+                        // Reset form
+                        document.getElementById('idea-form').reset();
+                        audioBlob = null;
+                        document.getElementById('audio-status').textContent = 'Tap to record a voice note';
+                        btn.disabled = false;
+                        btn.textContent = '✦ Submit Idea';
+                    }, 1800);
+                } else {
+                    throw new Error('Submit failed');
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = '✦ Submit Idea';
+                alert('Failed to submit. Please try again.');
+            }
+        });
+    </script>
+</body>
+
+</html>
